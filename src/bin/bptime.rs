@@ -5,7 +5,7 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 struct Args {
-    /// input file
+    /// optional input file
     #[structopt(parse(from_os_str), short = "f")]
     file: Option<PathBuf>,
 }
