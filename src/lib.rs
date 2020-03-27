@@ -1,6 +1,7 @@
 use regex::Regex;
 use std::cmp::PartialEq;
 use std::convert::TryFrom;
+use std::fmt::{self, Display};
 
 mod tests;
 
@@ -31,8 +32,23 @@ impl TryFrom<&str> for Category {
     }
 }
 
+impl Display for Category {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use Category::*;
+        write!(
+            f,
+            "{}",
+            match self {
+                C => "Code",
+                B => "BP",
+                M => "Meet",
+            }
+        )
+    }
+}
+
 #[derive(Debug, PartialEq)]
-pub struct Entry {
+struct Entry {
     category: Category,
     minutes: i32,
 }
@@ -50,7 +66,50 @@ impl Entry {
     }
 }
 
-pub fn summarize(content: String) -> Vec<Entry> {
+impl Display for Entry {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let hours = self.minutes / 60;
+        let minutes = self.minutes % 60;
+        write!(f, "{}:\t{}h {}m", self.category, hours, minutes)
+    }
+}
+
+pub struct Summary {
+    entries: Vec<Entry>,
+}
+
+impl Summary {
+    pub fn new(content: String) -> Self {
+        let entries = summarize(content);
+        Summary { entries }
+    }
+
+    fn total(&self) -> i32 {
+        self.entries.iter().map(|entry| entry.minutes).sum()
+    }
+}
+
+impl Display for Summary {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let total = self.total();
+        let total_hours = total / 60;
+        let total_minutes = total % 60;
+        write!(
+            f,
+            "{}",
+            format!(
+                "{}\nTotal:\t{}h {}m",
+                self.entries
+                    .iter()
+                    .fold(String::new(), |acc, entry| format!("{}\n{}", acc, entry)),
+                total_hours,
+                total_minutes
+            )
+        )
+    }
+}
+
+fn summarize(content: String) -> Vec<Entry> {
     content
         .lines()
         .filter_map(parse_line)

@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, stdin, Read};
 use std::path::PathBuf;
 use structopt::StructOpt;
-use bp_time::summarize;
+use bp_time::Summary;
 
 #[derive(StructOpt, Debug)]
 struct Args {
@@ -21,11 +21,9 @@ fn main() -> io::Result<()> {
         stdin().lock().read_to_string(&mut input)?;
     };
 
-    println!("{}", input);
+    let s = Summary::new(input);
 
-    let v = summarize(input);
-
-    println!("{:?}", v);
+    println!("{}", s);
 
     Ok(())
 }
