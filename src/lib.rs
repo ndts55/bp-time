@@ -12,7 +12,7 @@ lazy_static::lazy_static! {
     static ref ENTRY_REGEX: Regex = Regex::new(ENTRY_PATTERN).unwrap();
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum Category {
     C,
     B,
@@ -47,7 +47,7 @@ impl Display for Category {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 struct Entry {
     category: Category,
     minutes: i32,
@@ -84,19 +84,42 @@ impl Summary {
         Summary { entries }
     }
 
+    pub fn empty() -> Self {
+        Summary {
+            entries: Vec::new(),
+        }
+    }
+
     fn total(&self) -> i32 {
         self.entries.iter().map(|entry| entry.minutes).sum()
+    }
+
+    pub fn add(&mut self, other: &Summary) {
+        for other_entry in &other.entries {
+            if let Some(index) = self
+                .entries
+                .iter()
+                .position(|entry| entry.category == other_entry.category)
+            {
+                self.entries[index].minutes += other_entry.minutes;
+            } else {
+                self.entries.push(other_entry.clone());
+            }
+        }
     }
 }
 
 impl Display for Summary {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let total = self.total();
+        if total == 0 {
+            return write!(f, "\nNothing\n");
+        }
         let total_hours = total / 60;
         let total_minutes = total % 60;
         write!(
             f,
-            "{}",
+            "{}\n",
             format!(
                 "{}\nTotal:\t{}h {}m",
                 self.entries
