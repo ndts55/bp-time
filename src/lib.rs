@@ -2,6 +2,8 @@ use regex::Regex;
 use std::cmp::PartialEq;
 use std::convert::TryFrom;
 
+mod tests;
+
 static ENTRY_PATTERN: &str =
     r"((?P<hours>\d+)h\s*((?P<minutes>\d+)m)?|(?P<minutes_only>\d+)m)\s*\|\s*(?P<category>(m|b|c))";
 
@@ -9,7 +11,7 @@ lazy_static::lazy_static! {
     static ref ENTRY_REGEX: Regex = Regex::new(ENTRY_PATTERN).unwrap();
 }
 
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 enum Category {
     C,
     B,
@@ -29,7 +31,8 @@ impl TryFrom<&str> for Category {
     }
 }
 
-struct Entry {
+#[derive(Debug, PartialEq)]
+pub struct Entry {
     category: Category,
     minutes: i32,
 }
@@ -47,7 +50,7 @@ impl Entry {
     }
 }
 
-fn summarize(content: String) -> Vec<Entry> {
+pub fn summarize(content: String) -> Vec<Entry> {
     content
         .lines()
         .filter_map(parse_line)
@@ -55,10 +58,6 @@ fn summarize(content: String) -> Vec<Entry> {
 }
 
 fn parse_line(line: &str) -> Option<Entry> {
-    let get_num = |caps: &regex::Captures, name: &str| {
-        caps.name(name)
-            .and_then(|ma| ma.as_str().parse::<i32>().ok().or(Some(0)))
-    };
     ENTRY_REGEX
         .captures(line)
         .and_then(|caps| {
@@ -66,15 +65,26 @@ fn parse_line(line: &str) -> Option<Entry> {
                 .and_then(|ma| Category::try_from(ma.as_str()).ok())
                 .map(|category| (caps, category))
         })
-        .and_then(|(caps, category)| {
-            get_num(&caps, "hours").map(|h| (caps, Entry::new(category, h * 60)))
+        .map(|(caps, category)| {
+            let h = get_num_or_default(&caps, "hours");
+            (caps, Entry::new(category, h * 60))
         })
-        .and_then(|(caps, entry)| {
-            get_num(&caps, "minutes").map(|minutes| (caps, entry.add(minutes)))
+        .map(|(caps, entry)| {
+            let minutes = get_num_or_default(&caps, "minutes");
+            (caps, entry.add(minutes))
         })
-        .and_then(|(caps, entry)| {
-            get_num(&caps, "minutes_only").map(|minutes| entry.add(minutes))
+        .map(|(caps, entry)| {
+            let minutes = get_num_or_default(&caps, "minutes_only");
+            entry.add(minutes)
         })
+}
+
+fn get_num_or_default(caps: &regex::Captures, name: &str) -> i32 {
+    caps.name(name).and_then(parse_number).unwrap_or_default()
+}
+
+fn parse_number(ma: regex::Match) -> Option<i32> {
+    ma.as_str().parse::<i32>().ok()
 }
 
 fn sum_by_category(acc: Vec<Entry>, entry: Entry) -> Vec<Entry> {
