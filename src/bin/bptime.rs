@@ -65,7 +65,7 @@ fn print_all() -> io::Result<()> {
 
     println!("==============");
 
-    println!("Total{}", total);
+    println!("{}", total);
 
     Ok(())
 }
