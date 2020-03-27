@@ -1,4 +1,5 @@
 use bp_time::Summary;
+use std::ffi::OsStr;
 use std::fs::{self, File};
 use std::io::{self, stdin, Read};
 use std::path::PathBuf;
@@ -53,7 +54,7 @@ fn print_all() -> io::Result<()> {
 
     let mut total = Summary::empty();
     for md_file in md_files {
-        let name = format!("{}", md_file.display());
+        let name = format!("{}\n---", md_file.file_name().and_then(OsStr::to_str).unwrap_or(""));
         let mut input = String::new();
         let mut file = File::open(md_file)?;
         file.read_to_string(&mut input)?;
