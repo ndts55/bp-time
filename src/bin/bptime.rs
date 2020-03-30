@@ -7,11 +7,11 @@ use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
 struct Args {
-    /// optional input file
+    /// specify file to summarize
     #[structopt(parse(from_os_str), short = "f")]
     file: Option<PathBuf>,
 
-    /// all flag
+    /// summarize all md files and calculate total
     #[structopt(short, long)]
     all: bool,
 }
